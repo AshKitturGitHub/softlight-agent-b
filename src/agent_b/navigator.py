@@ -1,41 +1,51 @@
+import asyncio
 from playwright.async_api import async_playwright
-from .detectors import inject_watcher, dom_signature
+from tenacity import retry, stop_after_attempt, wait_fixed
 from .capture import Capturer
-from .skills import click_create, click_save, fill_labeled, open_filter_panel
+from .detectors import get_dom_hash
+
 
 class Navigator:
-    def __init__(self, dataset_dir: str):
-        self.dataset_dir = dataset_dir
+    """
+    Executes a plan in a real browser (Chromium) using Playwright.
+    Handles UI actions, waits for stability, and triggers capture events.
+    """
+
+    def __init__(self, writer):
+        self.writer = writer
+        self.dataset_dir = writer.dir
+
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    async def safe_goto(self, page, url: str):
+        """Navigate to a URL with retry logic."""
+        print(f"[AgentB] Navigating to {url}")
+        await page.goto(url, timeout=20000)
+        await page.wait_for_load_state("networkidle")
+        print(f"[AgentB] Page loaded: {url}")
 
     async def run(self, plan, seed_url: str):
+        """Run through all steps of the generated plan."""
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
-            ctx = await browser.new_context(viewport={"width": 1440, "height": 900})
-            page = await ctx.new_page()
+            page = await browser.new_page()
+
+            await self.safe_goto(page, seed_url)
+
             capt = Capturer(self.dataset_dir)
-            try:
-                await page.goto(seed_url, wait_until="domcontentloaded")
-                await inject_watcher(page)
-                dh = await dom_signature(page)
-                await capt.capture(page, "open", dh)
 
-                for step in plan.steps:
-                    if step.intent == "open":
-                        await page.goto(step.args.get("url", seed_url), wait_until="networkidle")
-                    elif step.intent == "click_create":
-                        await click_create(page)
-                    elif step.intent == "click_save":
-                        await click_save(page)
-                    elif step.intent == "fill_form_fields":
-                        for k, v in step.args.get("fields", {}).items():
-                            await fill_labeled(page, k, v)
-                    elif step.intent == "open_filter_panel":
-                        await open_filter_panel(page)
+            for step in plan.steps:
+                label = step.label
+                print(f"[AgentB] Executing step: {label}")
 
-                    dh = await dom_signature(page)
-                    await capt.capture(page, step.intent, dh)
+                try:
+                    dom_hash = await get_dom_hash(page)
 
-                capt.flush()
-            finally:
-                await ctx.close()
-                await browser.close()
+                    await capt.capture(page, label, dom_hash)
+
+                    await asyncio.sleep(1.5)  
+                except Exception as e:
+                    print(f"[AgentB] Step '{label}' failed: {e}")
+
+            await browser.close()
+            print("[AgentB] Navigation and capture complete.")
+

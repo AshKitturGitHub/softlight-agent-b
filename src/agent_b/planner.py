@@ -1,31 +1,29 @@
-from dataclasses import dataclass
-from typing import List, Optional
+from pydantic import BaseModel
+from typing import List
 
-@dataclass
-class Step:
-    intent: str
-    args: dict
+class Step(BaseModel):
+    label: str
+    params: dict = {}
 
-@dataclass
-class Plan:
+class Plan(BaseModel):
     steps: List[Step]
 
-def plan_from_prompt(prompt: str, seed_url: Optional[str]) -> Plan:
-    p = prompt.lower()
-    steps = []
-    if "create" in p and ("project" in p or "page" in p or "issue" in p):
-        steps = [
-            Step("open", {"url": seed_url}),
-            Step("click_create", {}),
-            Step("fill_form_fields", {"fields": {"Name": "Demo Project"}}),
-            Step("click_save", {})
-        ]
-    elif "filter" in p and ("database" in p or "issues" in p or "table" in p):
-        steps = [
-            Step("open", {"url": seed_url}),
-            Step("open_filter_panel", {}),
-            Step("click_save", {})
-        ]
-    else:
-        steps = [Step("open", {"url": seed_url})]
-    return Plan(steps=steps)
+class Planner:
+    """
+    Converts a natural-language task into a generalized sequence of UI actions.
+    This version uses basic heuristics; in a real system, an LLM could replace it.
+    """
+    def __init__(self):
+        self.keywords = {
+            "create": ["open", "click_create", "fill_form", "click_save"],
+            "filter": ["open", "open_filter_panel", "select_filter", "click_apply"],
+            "settings": ["open", "click_settings", "adjust", "click_save"]
+        }
+
+    def make_plan(self, prompt: str) -> Plan:
+        prompt_lower = prompt.lower()
+        for key, actions in self.keywords.items():
+            if key in prompt_lower:
+                return Plan(steps=[Step(label=a) for a in actions])
+        return Plan(steps=[Step(label="open")])
+

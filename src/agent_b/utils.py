@@ -1,16 +1,23 @@
-import asyncio, hashlib, time
+import imagehash
+from PIL import Image
+import hashlib
+import time
 from slugify import slugify
-from tenacity import retry, stop_after_attempt, wait_exponential
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=4))
-async def wait_js(page, expr: str, timeout_ms: int):
-    return await page.wait_for_function(expr, timeout=timeout_ms)
+def digest(text: str) -> str:
+    """Return a short deterministic hash of a string."""
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:10]
 
-def ts() -> str:
-    return time.strftime("%Y%m%d-%H%M%S")
+def image_signature(path: str) -> str:
+    """Compute perceptual hash (pHash) of an image file."""
+    with Image.open(path) as img:
+        return str(imagehash.phash(img))
 
-def digest(s: str) -> str:
-    return hashlib.sha1(s.encode()).hexdigest()[:8]
+def slug(name: str) -> str:
+    """Safe slugified string for filenames."""
+    return slugify(name)
 
-def slug(s: str) -> str:
-    return slugify(s)[:60]
+def now_ms() -> int:
+    """Timestamp in milliseconds."""
+    return int(time.time() * 1000)
+

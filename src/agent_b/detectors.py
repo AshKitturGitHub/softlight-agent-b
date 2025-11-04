@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from PIL import Image
 import imagehash
 import orjson
+import hashlib
 
 @dataclass
 class StateSignature:
@@ -25,8 +26,18 @@ MUTATION_WATCHER = r"""
 })();
 """
 
+
+
+async def get_dom_hash(page):
+    """
+    Compute a short hash of the current DOM tree to detect visual or structural changes.
+    """
+    html = await page.content()
+    dom_hash = hashlib.sha1(html.encode("utf-8")).hexdigest()[:10]
+    return dom_hash
+
 async def inject_watcher(page):
-    await page.evaluate(MUTATION_WATCHER)
+    await page.add_script_tag(content=MUTATION_WATCHER)
 
 async def dom_signature(page) -> str:
     html = await page.evaluate("() => document.documentElement.outerHTML.slice(0, 50000)")
