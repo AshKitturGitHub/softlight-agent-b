@@ -1,0 +1,5 @@
+{
+  "name": "notion_filter_db",
+  "prompt": "Filter a database in Notion to only Open items",
+  "seed_url": "https://www.notion.so/templates/content-calendar"
+}

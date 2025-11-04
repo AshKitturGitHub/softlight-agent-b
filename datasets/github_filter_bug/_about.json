@@ -1,0 +1,5 @@
+{
+  "name": "github_filter_bug",
+  "prompt": "Filter issues on GitHub repo by label bug",
+  "seed_url": "https://github.com/microsoft/playwright/issues"
+}

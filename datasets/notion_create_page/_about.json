@@ -1,0 +1,5 @@
+{
+  "name": "notion_create_page",
+  "prompt": "Create a new page in Notion",
+  "seed_url": "https://www.notion.so/templates"
+}
