@@ -1,0 +1,24 @@
+[project]
+name = "agent-b"
+version = "0.1.0"
+description = "Generalizable UI state capture agent for Softlight take-home."
+authors = [
+  { name = "Ashton 'Ash' Kittur" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+  "playwright==1.48.0",
+  "pydantic>=2.8",
+  "python-slugify>=8.0",
+  "Pillow>=10.3",
+  "imagehash>=4.3",
+  "orjson>=3.10",
+  "rich>=13.7",
+  "tenacity>=9.0"
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,14 @@
+- name: notion_filter_db
+  prompt: "Filter a database in Notion to only Open items"
+  seed: "https://www.notion.so/templates/content-calendar"
+  dataset: "./datasets/notion_filter_db"
+
+- name: github_filter_bug
+  prompt: "Filter issues on GitHub repo by label bug"
+  seed: "https://github.com/microsoft/playwright/issues"
+  dataset: "./datasets/github_filter_bug"
+
+- name: notion_create_page
+  prompt: "Create a new page in Notion"
+  seed: "https://www.notion.so/templates/"
+  dataset: "./datasets/notion_create_page"

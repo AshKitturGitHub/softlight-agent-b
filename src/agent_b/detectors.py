@@ -1,0 +1,37 @@
+from dataclasses import dataclass
+from PIL import Image
+import imagehash
+import orjson
+
+@dataclass
+class StateSignature:
+    url_hash: str
+    dom_hash: str
+    img_phash: str
+
+    def key(self) -> str:
+        return f"{self.url_hash}-{self.dom_hash}-{self.img_phash}"
+
+MUTATION_WATCHER = r"""
+(() => {
+  const target = document.body;
+  const state = { last: Date.now(), deltas: 0 };
+  const obs = new MutationObserver((muts) => {
+    state.deltas += muts.length;
+    window.__agentb_state = state;
+  });
+  obs.observe(target, { childList: true, subtree: true, attributes: true });
+  window.__agentb_modal_open = () => !!document.querySelector('[role="dialog"], .modal, [aria-modal="true"]');
+})();
+"""
+
+async def inject_watcher(page):
+    await page.evaluate(MUTATION_WATCHER)
+
+async def dom_signature(page) -> str:
+    html = await page.evaluate("() => document.documentElement.outerHTML.slice(0, 50000)")
+    return str(abs(hash(html)))
+
+def image_signature(img_path: str) -> str:
+    ph = imagehash.phash(Image.open(img_path).convert("RGB"))
+    return str(ph)

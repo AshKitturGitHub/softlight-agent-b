@@ -1,0 +1,8 @@
+playwright==1.48.0
+pydantic>=2.8
+python-slugify>=8.0
+Pillow>=10.3
+imagehash>=4.3
+orjson>=3.10
+rich>=13.7
+tenacity>=9.0
